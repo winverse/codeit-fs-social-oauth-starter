@@ -6,7 +6,7 @@ Authorization Code Flow를 직접 처리하고 로그인 성공 후 서비스 JW
 
 ## 준비
 
-- Node.js 24.18.1
+- Node.js 26.7.0
 - pnpm
 - PostgreSQL
 
