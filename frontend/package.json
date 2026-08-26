@@ -1,0 +1,32 @@
+{
+  "name": "codeit-fs-social-oauth-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "start": "next start",
+    "lint": "eslint .",
+    "format": "prettier . --write",
+    "check": "pnpm format && pnpm lint && pnpm build"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.90.21",
+    "@vanilla-extract/css": "^1.18.0",
+    "clsx": "^2.1.1",
+    "date-fns": "^3.6.0",
+    "next": "^16.1.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@vanilla-extract/next-plugin": "^2.4.17",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "eslint": "^9.39.1",
+    "eslint-config-next": "^16.1.6",
+    "prettier": "^3.6.2"
+  }
+}
