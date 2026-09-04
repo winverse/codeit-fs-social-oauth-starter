@@ -11,26 +11,32 @@ sequenceDiagram
 
     U->>B: 소셜 로그인 선택
     B->>S: GET /api/auth/social/{provider}/login
-    Note over S: state 생성·서명<br/>nonce·PKCE verifier 쿠키 저장
-    S-->>B: 302 공급자 인가 URL
+    Note over S: state 생성·서명<br/>transaction nonce·PKCE verifier 쿠키 저장
+    S-->>B: 공급자 인가 URL로 리디렉션
     B->>P: 인가 요청(state, code challenge)
     P-->>B: 로그인·동의 화면
     U->>P: 로그인·동의
-    P-->>B: 302 callback?code=...&state=...
+    P-->>B: callback?code=...&state=...로 리디렉션
     B->>S: GET /api/auth/social/callback/{provider}
-    Note over S: state·nonce·PKCE verifier 검증
+    Note over S: state·transaction nonce·PKCE verifier 검증
     S->>P: 인가 코드와 verifier로 토큰 요청
     P-->>S: access token
     S->>P: 사용자 정보 요청
     P-->>S: 공급자 사용자 정보
-    Note over S: 사용자 확인·서비스 JWT 발급
-    S-->>B: 인증 쿠키 설정 후 302
+    Note over S: 응답 검증·사용자 확인·서비스 JWT 발급
+    S-->>B: 인증 쿠키 설정 후 프론트엔드로 리디렉션
 ```
 
-OAuth 공급자는 브라우저에 `302` 응답을 보내고, 브라우저가 서비스 callback
-주소로 이동합니다. 공급자가 서비스 서버를 직접 호출하는 흐름이 아닙니다.
+OAuth 공급자가 브라우저를 서비스 callback 주소로 리디렉션합니다. 공급자가
+서비스 서버를 직접 호출하는 흐름이 아닙니다.
 토큰 요청은 세 공급자 모두 `POST` form body를 사용하며 `Client Secret`과 PKCE
 verifier를 request URI에 넣지 않습니다.
+
+OAuth 2.0은 API 접근 권한 위임을, OpenID Connect는 ID Token을 사용하는 사용자
+인증을 다룹니다. 이 프로젝트는 공급자 access token으로 사용자 정보 API를
+호출하며 ID Token은 검증하지 않습니다. 여기의 transaction nonce는 OIDC
+`nonce`가 아니라 현재 브라우저가 시작한 로그인 요청을 callback에 결합하는 내부
+값입니다.
 
 ## 공급자별 엔드포인트
 
@@ -42,14 +48,14 @@ verifier를 request URI에 넣지 않습니다.
 
 ## 코드 매핑
 
-| 단계                          | 파일                                                | 역할                                            |
-| ----------------------------- | --------------------------------------------------- | ----------------------------------------------- |
-| 로그인 URL 생성·callback 처리 | `backend/src/controllers/auth/social.controller.js` | 공급자 URL 생성, state·PKCE 검증, 최종 리디렉션 |
-| state·PKCE 생성·검증          | `backend/src/providers/oauth-state.provider.js`     | HMAC·만료·nonce·verifier·이동 경로 검증         |
-| 임시 transaction·인증 쿠키    | `backend/src/providers/cookie.provider.js`          | nonce·PKCE verifier·인증 쿠키 설정·삭제         |
-| 토큰 교환·프로필 정규화       | `backend/src/services/social-auth.service.js`       | 공급자 API 호출과 사용자 처리                   |
-| 사용자 조회·생성              | `backend/src/repository/user.repository.js`         | 소셜 식별자와 사용자 데이터 접근                |
-| 서비스 JWT                    | `backend/src/providers/token.provider.js`           | Access Token·Refresh Token 발급                 |
+| 단계                          | 파일                                                | 역할                                                |
+| ----------------------------- | --------------------------------------------------- | --------------------------------------------------- |
+| 로그인 URL 생성·callback 처리 | `backend/src/controllers/auth/social.controller.js` | 공급자 URL 생성, state·PKCE 검증, 최종 리디렉션     |
+| state·PKCE 생성·검증          | `backend/src/providers/oauth-state.provider.js`     | HMAC·만료·transaction nonce·verifier·이동 경로 검증 |
+| 임시 transaction·인증 쿠키    | `backend/src/providers/cookie.provider.js`          | transaction nonce·PKCE verifier·인증 쿠키 설정·삭제 |
+| 토큰 교환·프로필 정규화       | `backend/src/services/social-auth.service.js`       | 공급자 API 호출과 사용자 처리                       |
+| 사용자 조회·생성              | `backend/src/repository/user.repository.js`         | 소셜 식별자와 사용자 데이터 접근                    |
+| 서비스 JWT                    | `backend/src/providers/token.provider.js`           | Access Token·Refresh Token 발급                     |
 
 ## 사용자 처리 경계
 

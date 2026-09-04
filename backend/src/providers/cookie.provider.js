@@ -27,8 +27,8 @@ export class CookieProvider {
     res.clearCookie('refreshToken', { path: '/' });
   }
 
-  setOAuthTransactionCookies(res, { nonce, codeVerifier }) {
-    res.cookie('oauthStateNonce', nonce, {
+  setOAuthTransactionCookies(res, { transactionNonce, codeVerifier }) {
+    res.cookie('oauthTransactionNonce', transactionNonce, {
       httpOnly: true,
       secure: config.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -45,8 +45,8 @@ export class CookieProvider {
     });
   }
 
-  getOAuthStateNonce(req) {
-    return req.cookies?.oauthStateNonce ?? null;
+  getOAuthTransactionNonce(req) {
+    return req.cookies?.oauthTransactionNonce ?? null;
   }
 
   getOAuthCodeVerifier(req) {
@@ -54,7 +54,7 @@ export class CookieProvider {
   }
 
   clearOAuthTransactionCookies(res) {
-    res.clearCookie('oauthStateNonce', {
+    res.clearCookie('oauthTransactionNonce', {
       path: '/api/auth/social/callback',
     });
     res.clearCookie('oauthCodeVerifier', {

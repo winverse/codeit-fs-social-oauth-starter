@@ -31,6 +31,10 @@ export class SocialAuthController extends BaseController {
 
     this.router.get(
       '/social/callback/:provider',
+      (req, res, next) => {
+        this.#cookieProvider.clearOAuthTransactionCookies(res);
+        next();
+      },
       validate('params', socialProviderParamSchema),
       validate('query', socialCallbackQuerySchema),
       (req, res) => this.socialCallback(req, res),
@@ -42,13 +46,13 @@ export class SocialAuthController extends BaseController {
   async socialRedirect(req, res) {
     const { provider } = req.params;
     const { next } = req.query;
-    const { state, nonce, codeVerifier, codeChallenge } =
+    const { state, transactionNonce, codeVerifier, codeChallenge } =
       this.#oauthStateProvider.createState({
         provider,
         next,
       });
     this.#cookieProvider.setOAuthTransactionCookies(res, {
-      nonce,
+      transactionNonce,
       codeVerifier,
     });
 
@@ -71,10 +75,9 @@ export class SocialAuthController extends BaseController {
     const transaction = this.#oauthStateProvider.verifyState({
       state,
       provider,
-      nonce: this.#cookieProvider.getOAuthStateNonce(req),
+      transactionNonce: this.#cookieProvider.getOAuthTransactionNonce(req),
       codeVerifier,
     });
-    this.#cookieProvider.clearOAuthTransactionCookies(res);
 
     if (!transaction) {
       throw new BadRequestException(ERROR_MESSAGE.INVALID_SOCIAL_AUTH_STATE);

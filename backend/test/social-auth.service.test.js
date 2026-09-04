@@ -34,7 +34,7 @@ test('does not automatically connect a social login to an existing email account
     jsonResponse({ access_token: 'google-access-token' }),
     jsonResponse({
       sub: 'google-user-id',
-      email: 'student@example.com',
+      email: 'Student@Example.com',
       email_verified: true,
       name: 'Student',
     }),
@@ -49,7 +49,10 @@ test('does not automatically connect a social login to an existing email account
   const service = new SocialAuthService({
     userRepository: {
       findBySocialAccount: async () => null,
-      findByEmail: async () => ({ id: 1, email: 'student@example.com' }),
+      findByEmail: async (email) => {
+        assert.equal(email, 'student@example.com');
+        return { id: 1, email };
+      },
     },
     tokenProvider: {
       generateTokens: () => assert.fail('tokens must not be generated'),
@@ -238,5 +241,116 @@ test('sends the Kakao PKCE verifier in the token request body', async () => {
     );
   } finally {
     globalThis.fetch = originalFetch;
+  }
+});
+
+test('rejects a provider token response without an access token', async () => {
+  const responses = [
+    jsonResponse({}),
+    jsonResponse({
+      sub: 'google-user-id',
+      email: 'student@example.com',
+      email_verified: true,
+    }),
+  ];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => responses.shift();
+  const service = new SocialAuthService({
+    userRepository: {
+      findBySocialAccount: () =>
+        assert.fail('an invalid token response must stop before user lookup'),
+    },
+    tokenProvider: {
+      generateTokens: () => assert.fail('tokens must not be generated'),
+    },
+  });
+
+  try {
+    await assert.rejects(
+      service.loginOrSignUp({
+        provider: 'google',
+        code: 'code',
+        state: 'state',
+        codeVerifier: 'google-code-verifier',
+      }),
+      { message: 'Social authentication failed' },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('rejects a provider profile without its required user ID', async () => {
+  const responses = [
+    jsonResponse({ access_token: 'google-access-token' }),
+    jsonResponse({
+      email: 'student@example.com',
+      email_verified: true,
+    }),
+  ];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => responses.shift();
+  const service = new SocialAuthService({
+    userRepository: {
+      findBySocialAccount: () =>
+        assert.fail('an invalid profile must stop before user lookup'),
+    },
+    tokenProvider: {
+      generateTokens: () => assert.fail('tokens must not be generated'),
+    },
+  });
+
+  try {
+    await assert.rejects(
+      service.loginOrSignUp({
+        provider: 'google',
+        code: 'code',
+        state: 'state',
+        codeVerifier: 'google-code-verifier',
+      }),
+      { message: 'Social authentication failed' },
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('rejects missing identity fields from every provider profile', async () => {
+  const cases = [
+    ['google', {}],
+    ['kakao', {}],
+    ['naver', { response: {} }],
+  ];
+
+  for (const [provider, profilePayload] of cases) {
+    const responses = [
+      jsonResponse({ access_token: `${provider}-access-token` }),
+      jsonResponse(profilePayload),
+    ];
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async () => responses.shift();
+    const service = new SocialAuthService({
+      userRepository: {
+        findBySocialAccount: () =>
+          assert.fail('an invalid profile must stop before user lookup'),
+      },
+      tokenProvider: {
+        generateTokens: () => assert.fail('tokens must not be generated'),
+      },
+    });
+
+    try {
+      await assert.rejects(
+        service.loginOrSignUp({
+          provider,
+          code: 'code',
+          state: 'state',
+          codeVerifier: `${provider}-code-verifier`,
+        }),
+        { message: 'Social authentication failed' },
+      );
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   }
 });

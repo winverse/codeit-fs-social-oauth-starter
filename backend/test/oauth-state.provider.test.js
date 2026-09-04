@@ -15,12 +15,13 @@ const createProvider = ({ now = NOW } = {}) =>
     },
   );
 
-test('accepts state bound to the provider, browser nonce, and PKCE verifier', () => {
+test('accepts state bound to the provider, transaction nonce, and PKCE verifier', () => {
   const provider = createProvider();
-  const { state, nonce, codeVerifier, codeChallenge } = provider.createState({
-    provider: 'google',
-    next: '/products?sort=latest#list',
-  });
+  const { state, transactionNonce, codeVerifier, codeChallenge } =
+    provider.createState({
+      provider: 'google',
+      next: '/products?sort=latest#list',
+    });
 
   assert.equal(codeVerifier.length, 43);
   assert.equal(codeChallenge.length, 43);
@@ -28,7 +29,7 @@ test('accepts state bound to the provider, browser nonce, and PKCE verifier', ()
     provider.verifyState({
       state,
       provider: 'google',
-      nonce,
+      transactionNonce,
       codeVerifier,
     }),
     {
@@ -38,9 +39,9 @@ test('accepts state bound to the provider, browser nonce, and PKCE verifier', ()
   );
 });
 
-test('rejects tampered state, nonce, verifier, and provider values', () => {
+test('rejects tampered state, transaction nonce, verifier, and provider values', () => {
   const provider = createProvider();
-  const { state, nonce, codeVerifier } = provider.createState({
+  const { state, transactionNonce, codeVerifier } = provider.createState({
     provider: 'google',
     next: '/',
   });
@@ -49,7 +50,7 @@ test('rejects tampered state, nonce, verifier, and provider values', () => {
     provider.verifyState({
       state: `${state}tampered`,
       provider: 'google',
-      nonce,
+      transactionNonce,
       codeVerifier,
     }),
     null,
@@ -58,7 +59,7 @@ test('rejects tampered state, nonce, verifier, and provider values', () => {
     provider.verifyState({
       state,
       provider: 'google',
-      nonce: 'other',
+      transactionNonce: 'other',
       codeVerifier,
     }),
     null,
@@ -67,7 +68,7 @@ test('rejects tampered state, nonce, verifier, and provider values', () => {
     provider.verifyState({
       state,
       provider: 'google',
-      nonce,
+      transactionNonce,
       codeVerifier: 'different-code-verifier',
     }),
     null,
@@ -76,7 +77,7 @@ test('rejects tampered state, nonce, verifier, and provider values', () => {
     provider.verifyState({
       state,
       provider: 'kakao',
-      nonce,
+      transactionNonce,
       codeVerifier,
     }),
     null,
@@ -85,17 +86,19 @@ test('rejects tampered state, nonce, verifier, and provider values', () => {
 
 test('rejects an expired state', () => {
   const issuingProvider = createProvider();
-  const { state, nonce, codeVerifier } = issuingProvider.createState({
-    provider: 'naver',
-    next: '/',
-  });
+  const { state, transactionNonce, codeVerifier } = issuingProvider.createState(
+    {
+      provider: 'naver',
+      next: '/',
+    },
+  );
   const verifyingProvider = createProvider({ now: NOW + 10 * 60 * 1000 + 1 });
 
   assert.equal(
     verifyingProvider.verifyState({
       state,
       provider: 'naver',
-      nonce,
+      transactionNonce,
       codeVerifier,
     }),
     null,

@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { z } from 'zod';
 import { config } from '#config';
 import { ERROR_MESSAGE } from '#constants';
 import {
@@ -6,6 +7,40 @@ import {
   ConflictException,
   UnauthorizedException,
 } from '#exceptions';
+import { canonicalizeEmail } from '../common/utils/email.js';
+
+const accessTokenResponseSchema = z.object({
+  access_token: z.string().min(1),
+});
+
+const googleProfileSchema = z.object({
+  sub: z.string().min(1),
+  email: z.email().nullable().optional(),
+  email_verified: z.boolean().optional(),
+  name: z.string().min(1).optional(),
+});
+
+const kakaoProfileSchema = z.object({
+  id: z.union([z.string().min(1), z.number().finite()]),
+  kakao_account: z
+    .object({
+      email: z.email().nullable().optional(),
+      is_email_valid: z.boolean().optional(),
+      is_email_verified: z.boolean().optional(),
+      profile: z.object({ nickname: z.string().min(1).optional() }).optional(),
+    })
+    .optional(),
+  properties: z.object({ nickname: z.string().min(1).optional() }).optional(),
+});
+
+const naverProfileSchema = z.object({
+  response: z.object({
+    id: z.string().min(1),
+    email: z.email().nullable().optional(),
+    name: z.string().min(1).optional(),
+    nickname: z.string().min(1).optional(),
+  }),
+});
 
 export class SocialAuthService {
   #userRepository;
@@ -78,33 +113,39 @@ export class SocialAuthService {
   async #getGoogleProfile(code, codeVerifier) {
     const callbackUri = `${config.API_BASE_URL}/api/auth/social/callback/google`;
 
-    const tokenResponse = await this.#requestSocialJson(
-      'https://oauth2.googleapis.com/token',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+    const tokenResponse = this.#parseSocialResponse(
+      accessTokenResponseSchema,
+      await this.#requestSocialJson(
+        'https://oauth2.googleapis.com/token',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            code,
+            client_id: config.GOOGLE_CLIENT_ID,
+            client_secret: config.GOOGLE_CLIENT_SECRET,
+            redirect_uri: callbackUri,
+            grant_type: 'authorization_code',
+            code_verifier: codeVerifier,
+          }),
         },
-        body: new URLSearchParams({
-          code,
-          client_id: config.GOOGLE_CLIENT_ID,
-          client_secret: config.GOOGLE_CLIENT_SECRET,
-          redirect_uri: callbackUri,
-          grant_type: 'authorization_code',
-          code_verifier: codeVerifier,
-        }),
-      },
-      'Google 토큰 요청에 실패했습니다.',
+        'Google 토큰 요청에 실패했습니다.',
+      ),
     );
 
-    const profileResponse = await this.#requestSocialJson(
-      'https://openidconnect.googleapis.com/v1/userinfo',
-      {
-        headers: {
-          Authorization: `Bearer ${tokenResponse.access_token}`,
+    const profileResponse = this.#parseSocialResponse(
+      googleProfileSchema,
+      await this.#requestSocialJson(
+        'https://openidconnect.googleapis.com/v1/userinfo',
+        {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+          },
         },
-      },
-      'Google 프로필 조회에 실패했습니다.',
+        'Google 프로필 조회에 실패했습니다.',
+      ),
     );
 
     return {
@@ -127,29 +168,35 @@ export class SocialAuthService {
       code_verifier: codeVerifier,
     });
 
-    const tokenResponse = await this.#requestSocialJson(
-      'https://kauth.kakao.com/oauth/token',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+    const tokenResponse = this.#parseSocialResponse(
+      accessTokenResponseSchema,
+      await this.#requestSocialJson(
+        'https://kauth.kakao.com/oauth/token',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+          },
+          body: tokenParams,
         },
-        body: tokenParams,
-      },
-      'Kakao 토큰 요청에 실패했습니다.',
+        'Kakao 토큰 요청에 실패했습니다.',
+      ),
     );
 
-    const profileResponse = await this.#requestSocialJson(
-      'https://kapi.kakao.com/v2/user/me',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
-          Authorization: `Bearer ${tokenResponse.access_token}`,
+    const profileResponse = this.#parseSocialResponse(
+      kakaoProfileSchema,
+      await this.#requestSocialJson(
+        'https://kapi.kakao.com/v2/user/me',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+          },
+          body: new URLSearchParams(),
         },
-        body: new URLSearchParams(),
-      },
-      'Kakao 프로필 조회에 실패했습니다.',
+        'Kakao 프로필 조회에 실패했습니다.',
+      ),
     );
 
     const nickname =
@@ -180,26 +227,32 @@ export class SocialAuthService {
       code_verifier: codeVerifier,
     });
 
-    const tokenResponse = await this.#requestSocialJson(
-      'https://nid.naver.com/oauth2/token',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+    const tokenResponse = this.#parseSocialResponse(
+      accessTokenResponseSchema,
+      await this.#requestSocialJson(
+        'https://nid.naver.com/oauth2/token',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: tokenParams,
         },
-        body: tokenParams,
-      },
-      'Naver 토큰 요청에 실패했습니다.',
+        'Naver 토큰 요청에 실패했습니다.',
+      ),
     );
 
-    const profilePayload = await this.#requestSocialJson(
-      'https://openapi.naver.com/v1/nid/me',
-      {
-        headers: {
-          Authorization: `Bearer ${tokenResponse.access_token}`,
+    const profilePayload = this.#parseSocialResponse(
+      naverProfileSchema,
+      await this.#requestSocialJson(
+        'https://openapi.naver.com/v1/nid/me',
+        {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+          },
         },
-      },
-      'Naver 프로필 조회에 실패했습니다.',
+        'Naver 프로필 조회에 실패했습니다.',
+      ),
     );
 
     const profileResponse = profilePayload.response;
@@ -218,13 +271,21 @@ export class SocialAuthService {
 
   #resolveEmail({ provider, profile }) {
     if (profile.email && profile.emailVerified) {
-      return profile.email.toLowerCase();
+      return canonicalizeEmail(profile.email);
     }
 
     const socialIdentityDigest = createHash('sha256')
       .update(`${provider}:${String(profile.id)}`)
       .digest('base64url');
     return `${provider}_${socialIdentityDigest}@social.local`;
+  }
+
+  #parseSocialResponse(schema, payload) {
+    const result = schema.safeParse(payload);
+    if (!result.success) {
+      throw new UnauthorizedException(ERROR_MESSAGE.SOCIAL_AUTH_FAILED);
+    }
+    return result.data;
   }
 
   async #requestSocialJson(url, options, defaultErrorMessage) {

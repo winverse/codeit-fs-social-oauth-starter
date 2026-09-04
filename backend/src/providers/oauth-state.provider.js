@@ -41,7 +41,7 @@ export class OAuthStateProvider {
     const payload = {
       provider,
       next: this.normalizeNextPath(next),
-      nonce: this.#randomBytes(32).toString('base64url'),
+      transactionNonce: this.#randomBytes(32).toString('base64url'),
       codeChallenge,
       issuedAt: this.#now(),
     };
@@ -51,14 +51,14 @@ export class OAuthStateProvider {
 
     return {
       state: `${encodedPayload}.${this.#sign(encodedPayload)}`,
-      nonce: payload.nonce,
+      transactionNonce: payload.transactionNonce,
       codeVerifier,
       codeChallenge,
     };
   }
 
-  verifyState({ state, provider, nonce, codeVerifier }) {
-    if (!state || !provider || !nonce || !codeVerifier) {
+  verifyState({ state, provider, transactionNonce, codeVerifier }) {
+    if (!state || !provider || !transactionNonce || !codeVerifier) {
       return null;
     }
 
@@ -82,7 +82,7 @@ export class OAuthStateProvider {
 
       if (
         payload.provider !== provider ||
-        !safeEqual(payload.nonce, nonce) ||
+        !safeEqual(payload.transactionNonce, transactionNonce) ||
         !safeEqual(payload.codeChallenge, codeChallenge) ||
         !Number.isFinite(age) ||
         age < 0 ||

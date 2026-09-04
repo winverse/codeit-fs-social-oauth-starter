@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '#exceptions';
 import { ERROR_MESSAGE } from '#constants';
+import { canonicalizeEmail } from '../common/utils/email.js';
 export class AuthService {
   #userRepository;
   #passwordProvider;
@@ -16,7 +17,8 @@ export class AuthService {
   }
 
   async signUp({ email, password, name }) {
-    const existingUser = await this.#userRepository.findByEmail(email);
+    const canonicalEmail = canonicalizeEmail(email);
+    const existingUser = await this.#userRepository.findByEmail(canonicalEmail);
     if (existingUser) {
       throw new ConflictException(ERROR_MESSAGE.EMAIL_ALREADY_EXISTS);
     }
@@ -24,7 +26,7 @@ export class AuthService {
     const hashedPassword = await this.#passwordProvider.hash(password);
 
     const user = await this.#userRepository.create({
-      email,
+      email: canonicalEmail,
       password: hashedPassword,
       name,
     });
@@ -35,9 +37,12 @@ export class AuthService {
   }
 
   async login({ email, password }) {
-    const authUser = await this.#userRepository.findByEmail(email, {
-      includePassword: true,
-    });
+    const authUser = await this.#userRepository.findByEmail(
+      canonicalizeEmail(email),
+      {
+        includePassword: true,
+      },
+    );
 
     if (!authUser) {
       throw new UnauthorizedException(ERROR_MESSAGE.INVALID_CREDENTIALS);

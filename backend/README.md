@@ -51,5 +51,5 @@ pnpm run test
 - `src/controllers/auth/social.controller.js`: 인가 요청과 callback
 - `src/providers/oauth-state.provider.js`: state와 PKCE 생성·검증
 - `src/services/social-auth.service.js`: 공급자 토큰·프로필 요청
-- `src/providers/cookie.provider.js`: state nonce·PKCE verifier와 인증 쿠키
+- `src/providers/cookie.provider.js`: transaction nonce·PKCE verifier와 인증 쿠키
 - `src/providers/token.provider.js`: 서비스 JWT
