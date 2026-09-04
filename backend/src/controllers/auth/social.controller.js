@@ -1,8 +1,8 @@
 import { BaseController } from '#controllers/base.controller.js';
-import { validate } from '#middlewares';
 import { ERROR_MESSAGE } from '#constants';
 import { config } from '#config';
 import { BadRequestException, UnauthorizedException } from '#exceptions';
+import { validate } from '../../middlewares/validation.middleware.js';
 import {
   socialProviderParamSchema,
   socialLoginQuerySchema,
