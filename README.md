@@ -7,7 +7,7 @@
 
 ## 처음 확인할 상태
 
-- `.nvmrc`에 고정된 Node.js 26.7.0을 사용합니다.
+- `.nvmrc`에 고정된 Node.js 24.20.0 LTS를 사용합니다.
 - `frontend`는 `http://localhost:3000`에서 실행합니다.
 - `backend`는 `http://localhost:5001`에서 실행합니다.
 - OAuth 앱과 로컬 환경 변수를 설정하기 전에는 공급자 로그인이 성공하지
