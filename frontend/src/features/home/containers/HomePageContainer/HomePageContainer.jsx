@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useLogoutAction } from '@/domains/auth/hooks/useLogoutAction';
-import { useAuthSession } from '@/domains/auth/hooks/useAuthSession';
+import { useLogoutAction } from '@/features/auth/hooks/useLogoutAction';
+import { useAuthSession } from '@/features/auth/hooks/useAuthSession';
 import * as styles from './HomePageContainer.css';
 
 export function HomePageContainer() {

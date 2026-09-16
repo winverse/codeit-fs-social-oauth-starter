@@ -1,4 +1,4 @@
-import { HomePageContainer } from '@/domains/home/containers/HomePageContainer';
+import { HomePageContainer } from '@/features/home/containers/HomePageContainer';
 
 export default function HomePage() {
   return <HomePageContainer />;

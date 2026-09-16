@@ -5,8 +5,8 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { APP_LOGO_SIZE } from '@/constants/uiDimensions';
-import { useLogoutAction } from '@/domains/auth/hooks/useLogoutAction';
-import { useAuthSession } from '@/domains/auth/hooks/useAuthSession';
+import { useLogoutAction } from '@/features/auth/hooks/useLogoutAction';
+import { useAuthSession } from '@/features/auth/hooks/useAuthSession';
 import * as styles from './AppHeader.css';
 
 export function AppHeader() {

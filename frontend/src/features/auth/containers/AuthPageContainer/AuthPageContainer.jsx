@@ -1,10 +1,10 @@
 'use client';
 
-import { AuthModeSwitch } from '@/domains/auth/components/AuthModeSwitch';
-import { AuthCredentialForm } from '@/domains/auth/components/AuthCredentialForm';
-import { SocialLoginButtons } from '@/domains/auth/components/SocialLoginButtons';
-import { SOCIAL_PROVIDERS } from '@/domains/auth/constants/socialProviders';
-import { useAuthPageModel } from '@/domains/auth/hooks/useAuthPageModel';
+import { AuthModeSwitch } from '@/features/auth/components/AuthModeSwitch';
+import { AuthCredentialForm } from '@/features/auth/components/AuthCredentialForm';
+import { SocialLoginButtons } from '@/features/auth/components/SocialLoginButtons';
+import { SOCIAL_PROVIDERS } from '@/features/auth/constants/socialProviders';
+import { useAuthPageModel } from '@/features/auth/hooks/useAuthPageModel';
 import * as styles from './AuthPageContainer.css';
 
 export function AuthPageContainer() {

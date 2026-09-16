@@ -1,4 +1,4 @@
-import { AuthPageContainer } from '@/domains/auth/containers/AuthPageContainer';
+import { AuthPageContainer } from '@/features/auth/containers/AuthPageContainer';
 
 export const metadata = {
   title: '로그인 | 판다마켓',
