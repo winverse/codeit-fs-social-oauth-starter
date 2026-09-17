@@ -1,17 +1,17 @@
-import { PrismaClient } from '#generated/prisma/client.ts';
-import { PrismaPg } from '@prisma/adapter-pg';
+import postgres from '@prisma/orm-postgres/runtime';
 import { faker } from '@faker-js/faker';
 import bcrypt from 'bcrypt';
+import contractJson from '../src/prisma/contract.json' with { type: 'json' };
 
 const SEED_PASSWORD = 'Test1234!';
 
 class Seeder {
-  #prisma;
+  #db;
   #numUsersToCreate;
   #hashedPassword;
 
-  constructor(prisma, numUsersToCreate = 5) {
-    this.#prisma = prisma;
+  constructor(db, numUsersToCreate = 5) {
+    this.#db = db;
     this.#numUsersToCreate = numUsersToCreate;
   }
 
@@ -28,7 +28,7 @@ class Seeder {
   }
 
   async #resetDb() {
-    return this.#prisma.$transaction([this.#prisma.user.deleteMany()]);
+    return this.#db.orm.public.User.deleteAll();
   }
 
   async #seedUsers() {
@@ -36,10 +36,7 @@ class Seeder {
       this.#makeUserInput(),
     );
 
-    return await this.#prisma.user.createManyAndReturn({
-      data,
-      select: { id: true },
-    });
+    return await this.#db.orm.public.User.select('id').createAll(data);
   }
 
   async run() {
@@ -68,12 +65,11 @@ class Seeder {
   }
 }
 
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL,
+const db = postgres({
+  contractJson,
+  url: process.env.DATABASE_URL,
 });
-
-const prisma = new PrismaClient({ adapter });
-const seeder = new Seeder(prisma, 5);
+const seeder = new Seeder(db, 5);
 
 seeder
   .run()
@@ -82,5 +78,5 @@ seeder
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await db.close();
   });

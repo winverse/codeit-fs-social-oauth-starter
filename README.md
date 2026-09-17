@@ -59,12 +59,13 @@ OAuth `Client ID`·`Client Secret`을 로컬 값으로 교체합니다.
 ## 데이터베이스와 실행
 
 `DATABASE_URL`은 이미 생성된 로컬 PostgreSQL 데이터베이스를 가리켜야 합니다.
-두 터미널을 각각 프로젝트 루트에서 열어 다음 명령을 실행합니다.
+두 터미널을 각각 프로젝트 루트에서 열어 다음 명령을 실행합니다. 백엔드는
+Prisma 8을 사용하며, `db:init`은 비어 있는 데이터베이스에 계약의 테이블을
+만듭니다.
 
 ```bash
 cd backend
-pnpm run prisma:generate
-pnpm run prisma:push
+pnpm run db:init
 pnpm run dev
 ```
 

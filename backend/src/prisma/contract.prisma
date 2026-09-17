@@ -1,20 +1,12 @@
-generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
-}
-
-datasource db {
-  provider = "postgresql"
-}
-
+// use prisma-8
 model User {
   id       Int     @id @default(autoincrement())
   email    String  @unique
   name     String?
   password String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
 
   socialAccounts SocialAccount[]
 }
@@ -27,8 +19,8 @@ model SocialAccount {
   userId Int
   user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
 
   @@unique([provider, providerId])
   @@index([userId])

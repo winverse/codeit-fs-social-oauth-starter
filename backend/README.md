@@ -1,6 +1,6 @@
 # Social OAuth Backend
 
-Express, Prisma, Awilix로 구성한 소셜 로그인 API입니다. Google, Kakao, Naver의
+Express, Prisma 8, Awilix로 구성한 소셜 로그인 API입니다. Google, Kakao, Naver의
 Authorization Code Flow를 직접 처리하고 로그인 성공 후 서비스 JWT를 HttpOnly
 쿠키로 전달합니다.
 
@@ -21,10 +21,17 @@ cp env/.env.example env/.env.development
 
 ## 데이터베이스
 
+비어 있는 로컬 데이터베이스에 계약의 테이블을 만듭니다. emit 결과물
+(`src/prisma/contract.json`, `src/prisma/contract.d.ts`)은 저장소에 포함되어
+있습니다.
+
 ```bash
-pnpm run prisma:generate
-pnpm run prisma:push
+pnpm run db:init
 ```
+
+계약(`src/prisma/contract.prisma`)을 바꿨다면 `pnpm run contract:emit`으로
+결과물을 다시 만들고, 이미 테이블이 있는 데이터베이스에는
+`pnpm run db:update`로 변경을 반영합니다.
 
 초기 데이터가 필요할 때만 seed를 실행합니다.
 

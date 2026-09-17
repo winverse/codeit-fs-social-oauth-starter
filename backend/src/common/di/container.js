@@ -5,7 +5,7 @@ import {
   InjectionMode,
   Lifetime,
 } from 'awilix';
-import { prisma } from '#db/prisma.js';
+import { db } from '#prisma/db.js';
 import { config } from '#config';
 import { UserRepository } from '#repository';
 import { AuthService, SocialAuthService } from '#services';
@@ -26,7 +26,7 @@ export const createContainer = () => {
 
   container.register({
     // 1. Providers / Data Access
-    prisma: asValue(prisma),
+    db: asValue(db),
     oauthStateSecret: asValue(config.OAUTH_STATE_SECRET),
     clientBaseUrl: asValue(config.CLIENT_BASE_URL),
     userRepository: asClass(UserRepository, { lifetime: Lifetime.SINGLETON }),
