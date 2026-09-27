@@ -6,7 +6,7 @@ Authorization Code Flow를 직접 처리하고 로그인 성공 후 서비스 JW
 
 ## 준비
 
-- Node.js 24.20.0 LTS
+- Node.js
 - pnpm
 - PostgreSQL
 
@@ -55,7 +55,7 @@ pnpm run test
 
 ## 주요 파일
 
-- `src/controllers/auth/social.controller.js`: 인가 요청과 callback
+- `src/controllers/auth/social.controller.js`: 인가 요청과 콜백
 - `src/providers/oauth-state.provider.js`: state와 PKCE 생성·검증
 - `src/services/social-auth.service.js`: 공급자 토큰·프로필 요청
 - `src/providers/cookie.provider.js`: transaction nonce·PKCE verifier와 인증 쿠키

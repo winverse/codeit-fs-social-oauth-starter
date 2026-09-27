@@ -7,7 +7,6 @@
 
 ## 처음 확인할 상태
 
-- `.nvmrc`에 고정된 Node.js 24.20.0 LTS를 사용합니다.
 - `frontend`는 `http://localhost:3000`에서 실행합니다.
 - `backend`는 `http://localhost:5001`에서 실행합니다.
 - OAuth 앱과 로컬 환경 변수를 설정하기 전에는 공급자 로그인이 성공하지
@@ -27,16 +26,12 @@ codeit-fs-social-oauth-starter/
 설정한 뒤 자신의 `backend/env/.env.development`에 자격 증명을 입력합니다.
 소스 코드에 secret을 붙여 넣거나 화면을 캡처해 공유하지 않습니다.
 
-Google과 Naver 요청에는 공급자 계약에 따라 `openid` scope가 포함되지만, 이
+Google과 Naver 요청에는 공급자 요청 규격에 따라 `openid` scope가 포함되지만, 이
 프로젝트는 ID Token을 인증 결과로 검증하지 않습니다. 공급자 access token으로
 공식 사용자 정보 API를 호출하며, 코드의 `transactionNonce`는 OIDC `nonce`가
-아니라 현재 브라우저의 OAuth 로그인 요청을 callback에 결합하는 내부 값입니다.
+아니라 현재 브라우저의 OAuth 로그인 요청을 콜백에 결합하는 내부 값입니다.
 
 ## 설치
-
-```bash
-nvm use
-```
 
 ```bash
 cd frontend
@@ -77,16 +72,23 @@ cp .env.example .env.local
 pnpm run dev
 ```
 
+백엔드 터미널에 `db:init`의 `✔ Applied`로 시작하는 줄과
+`Server is running port number is 5001`이 나타나고
+`http://localhost:5001/api/ping`이 `{"message":"현재 시간: …"}`처럼 현재 시간을
+담은 JSON을 응답하면 백엔드가 준비된 것입니다. 프론트엔드가 실행되면
+`http://localhost:3000/login`에 `Google OAuth 흐름 테스트`,
+`Kakao OAuth 흐름 테스트`, `Naver OAuth 흐름 테스트` 버튼이 보입니다.
+
 ## 보안 경계
 
 - `state`는 요청마다 새 난수를 사용하고 서명·만료 시간·공급자·브라우저 쿠키를
   함께 검증합니다.
 - 세 공급자 모두 PKCE S256 challenge를 인가 요청에 보내고, HttpOnly 쿠키에
   결합한 verifier를 토큰 요청 body에서 한 번 사용합니다.
-- OAuth transaction cookie는 `SameSite=Lax`와 callback 전용 경로를 사용하고,
+- 로그인 트랜잭션 쿠키는 `SameSite=Lax`와 콜백 전용 경로를 사용하고,
   운영 HTTPS에서는 `Secure`도 사용합니다. 인증 API의 credentialed CORS 응답은
-  `CORS_ORIGINS`에 등록한 정확한 origin에만 허용합니다.
-- 로그인 후 이동 경로는 프론트엔드와 같은 origin의 상대 경로만 허용합니다.
+  `CORS_ORIGINS`에 등록한 정확한 오리진에만 허용합니다.
+- 로그인 후 이동 경로는 프론트엔드와 같은 오리진의 상대 경로만 허용합니다.
 - 공급자 access token과 필수 사용자 ID가 없는 응답은 사용자 조회 전에
   거부합니다.
 - 기존 이메일 계정에 소셜 계정을 자동 연결하지 않습니다. 기존 계정에 연결하는
