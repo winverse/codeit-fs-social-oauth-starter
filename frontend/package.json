@@ -6,8 +6,8 @@
     "node": ">=24.0.0 <25"
   },
   "scripts": {
-    "dev": "next dev --webpack",
-    "build": "next build --webpack",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier . --write",
@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.21",
-    "@vanilla-extract/css": "^1.18.0",
+    "@vanilla-extract/css": "^1.21.2",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "next": "^16.1.6",
@@ -23,7 +23,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@vanilla-extract/next-plugin": "^2.4.17",
+    "@vanilla-extract/next-plugin": "^2.5.2",
     "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^9.39.1",
     "eslint-config-next": "^16.1.6",
