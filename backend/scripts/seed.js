@@ -2,6 +2,7 @@ import postgres from '@prisma/orm-postgres/runtime';
 import { faker } from '@faker-js/faker';
 import bcrypt from 'bcrypt';
 import contractJson from '../src/prisma/contract.json' with { type: 'json' };
+import { canonicalizeEmail } from '../src/common/utils/email.js';
 
 const SEED_PASSWORD = 'Test1234!';
 
@@ -21,7 +22,7 @@ class Seeder {
 
   #makeUserInput() {
     return {
-      email: faker.internet.email(),
+      email: canonicalizeEmail(faker.internet.email()),
       name: faker.person.fullName(),
       password: this.#hashedPassword,
     };
