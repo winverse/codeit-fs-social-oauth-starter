@@ -46,8 +46,6 @@ pnpm run dev
 ```
 
 ```bash
-pnpm run format:check
-pnpm run lint
 pnpm run test
 ```
 

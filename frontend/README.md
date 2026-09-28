@@ -13,10 +13,3 @@ pnpm run dev
 
 기본 화면은 `http://localhost:3000`에서 확인합니다. 백엔드는 기본적으로
 `http://localhost:5001`에서 실행해야 합니다.
-
-## 검사
-
-```bash
-pnpm run lint
-pnpm run build
-```
