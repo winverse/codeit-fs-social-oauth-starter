@@ -7,19 +7,19 @@ sequenceDiagram
     actor U as 사용자
     participant B as 브라우저
     participant S as 서비스 서버
-    participant P as OAuth 공급자
+    participant P as 공급자
 
     U->>B: 소셜 로그인 선택
     B->>S: GET /api/auth/social/{provider}/login
-    Note over S: state 생성·서명<br/>transaction nonce·PKCE verifier 쿠키 저장
+    Note over S: state 생성·서명<br/>transactionNonce·PKCE verifier 쿠키 저장
     S-->>B: 공급자 인가 URL로 리디렉션
-    B->>P: 인가 요청(state, code challenge)
+    B->>P: 인가 요청(state, code_challenge)
     P-->>B: 로그인·동의 화면
     U->>P: 로그인·동의
     P-->>B: callback?code=...&state=...로 리디렉션
     B->>S: GET /api/auth/social/callback/{provider}
-    Note over S: state·transaction nonce·PKCE verifier 검증
-    S->>P: 인가 코드와 verifier로 토큰 요청
+    Note over S: state·transactionNonce·PKCE verifier 검증
+    S->>P: Authorization Code와 verifier로 토큰 요청
     P-->>S: access token
     S->>P: 사용자 정보 요청
     P-->>S: 공급자 사용자 정보
