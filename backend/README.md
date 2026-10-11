@@ -1,7 +1,7 @@
 # Social OAuth Backend
 
 Express, Prisma 8, Awilix로 구성한 소셜 로그인 API입니다. Google, Kakao, Naver의
-Authorization Code Flow를 직접 처리하고 로그인 성공 후 서비스 JWT를 HttpOnly
+Authorization Code 플로우를 직접 처리하고 로그인 성공 후 서비스 JWT를 HttpOnly
 쿠키로 전달합니다.
 
 ## 준비
@@ -16,7 +16,7 @@ cp env/.env.example env/.env.development
 ```
 
 `env/.env.development`의 `<database-user>`와 `<database-password>`를 포함한 예시
-값을 로컬 환경에 맞게 교체합니다. 실제 OAuth secret과 JWT secret은 Git에
+값을 로컬 환경에 맞게 교체합니다. 실제 OAuth Client Secret과 JWT 시크릿은 Git에
 추가하지 않습니다.
 
 ## 데이터베이스
@@ -54,7 +54,7 @@ pnpm run test
 ## 주요 파일
 
 - `src/controllers/auth/social.controller.js`: 인가 요청과 콜백
-- `src/providers/oauth-state.provider.js`: state와 PKCE 생성·검증
+- `src/providers/oauth-state.provider.js`: `state`와 PKCE 생성·검증
 - `src/services/social-auth.service.js`: 공급자 토큰·프로필 요청
-- `src/providers/cookie.provider.js`: transaction nonce·PKCE verifier와 인증 쿠키
+- `src/providers/cookie.provider.js`: `transactionNonce`·PKCE verifier와 인증 쿠키
 - `src/providers/token.provider.js`: 서비스 JWT
