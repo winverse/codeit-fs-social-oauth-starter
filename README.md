@@ -73,9 +73,9 @@ pnpm run dev
 ```
 
 백엔드 터미널에 `db:init`의 `✔ Applied`로 시작하는 줄과
-`Server is running port number is 5001`이 나타나고
-`http://localhost:5001/api/ping`이 `{"message":"현재 시간: …"}`처럼 현재 시간을
-담은 JSON을 응답하면 백엔드가 준비된 것입니다. 프론트엔드가 실행되면
+`Server is running port number is 5001`이 나타나고, 브라우저에서
+`http://localhost:5001/api/ping`을 열었을 때 `{"message":"현재 시간: …"}`처럼
+현재 시간을 담은 JSON이 보이면 백엔드가 준비된 것입니다. 프론트엔드가 실행되면
 `http://localhost:3000/login`에 `Google OAuth 흐름 테스트`,
 `Kakao OAuth 흐름 테스트`, `Naver OAuth 흐름 테스트` 버튼이 보입니다.
 
