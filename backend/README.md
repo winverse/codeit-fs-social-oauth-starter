@@ -53,8 +53,8 @@ pnpm run test
 
 ## 주요 파일
 
-- `src/controllers/auth/social.controller.js`: 인가 요청과 콜백
-- `src/providers/oauth-state.provider.js`: `state`와 PKCE 생성·검증
-- `src/services/social-auth.service.js`: 공급자 토큰·프로필 요청
-- `src/providers/cookie.provider.js`: `transactionNonce`·PKCE verifier와 인증 쿠키
-- `src/providers/token.provider.js`: 서비스 JWT
+- `src/controllers/auth/social-controller.js`: 인가 요청과 콜백
+- `src/providers/oauth-state-provider.js`: `state`와 PKCE 생성·검증
+- `src/services/social-auth-service.js`: 공급자 토큰·프로필 요청
+- `src/providers/cookie-provider.js`: `transactionNonce`·PKCE verifier와 인증 쿠키
+- `src/providers/token-provider.js`: 서비스 JWT

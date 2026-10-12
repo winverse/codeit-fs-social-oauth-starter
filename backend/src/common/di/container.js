@@ -7,7 +7,7 @@ import {
 } from 'awilix';
 import { db } from '#prisma/db.js';
 import { config } from '#config';
-import { UserRepository } from '#repository';
+import { UserRepository } from '#repositories';
 import { AuthService, SocialAuthService } from '#services';
 import { AuthController, SocialAuthController, Controller } from '#controllers';
 import {

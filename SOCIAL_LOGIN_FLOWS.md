@@ -50,12 +50,12 @@ OAuth 2.0은 API 접근 권한 위임을, OpenID Connect는 id token을 사용�
 
 | 단계                    | 파일                                                | 역할                                                   |
 | ----------------------- | --------------------------------------------------- | ------------------------------------------------------ |
-| 인가 요청·콜백 처리     | `backend/src/controllers/auth/social.controller.js` | 공급자 인가 URL 생성, `state`·PKCE 검증, 최종 리디렉트 |
-| `state`·PKCE 생성·검증  | `backend/src/providers/oauth-state.provider.js`     | HMAC·만료·`transactionNonce`·verifier·이동 경로 검증   |
-| 트랜잭션·인증 쿠키      | `backend/src/providers/cookie.provider.js`          | `transactionNonce`·PKCE verifier·인증 쿠키 설정·삭제   |
-| 토큰 교환·프로필 정규화 | `backend/src/services/social-auth.service.js`       | 공급자 API 호출과 유저 처리                            |
-| 유저 조회·생성          | `backend/src/repository/user.repository.js`         | 소셜 식별자와 유저 데이터 접근                         |
-| 서비스 JWT              | `backend/src/providers/token.provider.js`           | 서비스 access token·refresh token 발급                 |
+| 인가 요청·콜백 처리     | `backend/src/controllers/auth/social-controller.js` | 공급자 인가 URL 생성, `state`·PKCE 검증, 최종 리디렉트 |
+| `state`·PKCE 생성·검증  | `backend/src/providers/oauth-state-provider.js`     | HMAC·만료·`transactionNonce`·verifier·이동 경로 검증   |
+| 트랜잭션·인증 쿠키      | `backend/src/providers/cookie-provider.js`          | `transactionNonce`·PKCE verifier·인증 쿠키 설정·삭제   |
+| 토큰 교환·프로필 정규화 | `backend/src/services/social-auth-service.js`       | 공급자 API 호출과 유저 처리                            |
+| 유저 조회·생성          | `backend/src/repositories/user-repository.js`       | 소셜 식별자와 유저 데이터 접근                         |
+| 서비스 JWT              | `backend/src/providers/token-provider.js`           | 서비스 access token·refresh token 발급                 |
 
 ## 유저 처리 경계
 

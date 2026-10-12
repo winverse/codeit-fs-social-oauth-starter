@@ -1,7 +1,7 @@
-import { BaseController } from '#controllers/base.controller.js';
+import { BaseController } from '#controllers/base-controller.js';
 import { HTTP_STATUS } from '#constants';
 import { validate } from '#middlewares';
-import { signUpSchema, loginSchema } from './dto/auth.dto.js';
+import { signUpSchema, loginSchema } from './dto/auth-dto.js';
 
 export class AuthController extends BaseController {
   #authService;
