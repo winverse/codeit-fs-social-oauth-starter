@@ -54,26 +54,34 @@ OAuth Client ID·Client Secret을 로컬 값으로 교체합니다.
 ## 데이터베이스와 실행
 
 `DATABASE_URL`은 이미 생성된 로컬 PostgreSQL 데이터베이스를 가리켜야 합니다.
-두 터미널을 각각 프로젝트 루트에서 열어 다음 명령을 실행합니다. 백엔드는
-Prisma 8을 사용하며, `db:init`은 비어 있는 데이터베이스에 계약의 테이블을
-만듭니다.
+백엔드는 Prisma 8을 사용하며, `db:init`은 비어 있는 데이터베이스에 계약의
+테이블을 만듭니다. `backend` 디렉터리에서 실행합니다.
 
 ```bash
-cd backend
 pnpm run db:init
-pnpm run dev
 ```
 
-다른 터미널에서 프론트엔드를 실행합니다.
+`✔ Applied`로 시작하는 줄이 출력되면 데이터베이스 준비가 끝난 것입니다. 이어서
+프론트엔드 환경 변수 예시 파일을 복사합니다.
 
 ```bash
-cd frontend
+cd ../frontend
 cp .env.example .env.local
+```
+
+두 터미널을 각각 프로젝트 루트에서 열어 다음 명령을 실행합니다.
+
+```bash
+# 터미널 1
+cd backend
+pnpm run dev
+
+# 터미널 2
+cd frontend
 pnpm run dev
 ```
 
-백엔드 터미널에 `db:init`의 `✔ Applied`로 시작하는 줄과
-`Server is running port number is 5001`이 나타나고, 브라우저에서
+터미널 1에 `Server is running port number is 5001`이 나타나고, 브라우저에서
 `http://localhost:5001/api/ping`을 열었을 때 `{"message":"현재 시간: …"}`처럼
 현재 시간을 담은 JSON이 보이면 백엔드가 준비된 것입니다. 프론트엔드가 실행되면
 `http://localhost:3000/login`에 `Google OAuth 흐름 테스트`,
