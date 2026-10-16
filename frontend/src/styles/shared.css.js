@@ -67,10 +67,6 @@ export const primaryButton = style({
     '&:hover': {
       backgroundColor: vars.color.blueHover,
     },
-    '&:focus-visible': {
-      outline: `2px solid ${vars.color.blueFocus}`,
-      outlineOffset: '2px',
-    },
     '&:disabled': {
       backgroundColor: vars.color.gray400,
       cursor: 'default',

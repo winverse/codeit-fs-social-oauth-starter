@@ -57,7 +57,7 @@ export function AppHeader() {
     <header className={styles.header}>
       <div className={styles.inner}>
         <div className={styles.left}>
-          <Link href="/" className={styles.logoLink} aria-label="홈으로 이동">
+          <Link href="/" className={styles.logoLink}>
             <Image
               src="/images/logo/logo.svg"
               alt="판다마켓 로고"
@@ -69,28 +69,23 @@ export function AppHeader() {
         </div>
 
         {isPending ? (
-          <div className={styles.sessionSkeleton} aria-hidden={true} />
+          <div className={styles.sessionSkeleton} />
         ) : user ? (
           <div className={styles.userMenu} ref={menuRef}>
             <button
               type="button"
               className={styles.userButton}
-              aria-haspopup="menu"
-              aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((open) => !open)}
             >
               <span className={styles.userName}>{displayName}</span>
-              <span className={chevronClassName} aria-hidden={true}>
-                ▾
-              </span>
+              <span className={chevronClassName}>▾</span>
             </button>
 
             {isMenuOpen ? (
-              <div className={styles.menuPopover} role="menu">
+              <div className={styles.menuPopover}>
                 <p className={styles.menuStatus}>로그인됨</p>
                 <button
                   type="button"
-                  role="menuitem"
                   className={styles.menuItemButton}
                   disabled={logoutMutation.isPending}
                   onClick={() => logoutMutation.mutate()}

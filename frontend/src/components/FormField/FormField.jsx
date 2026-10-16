@@ -1,7 +1,6 @@
 import * as styles from './FormField.css';
 
 export function FormField({
-  id,
   label,
   value,
   onChange,
@@ -15,14 +14,9 @@ export function FormField({
 }) {
   return (
     <div>
-      {label ? (
-        <label className={styles.label} htmlFor={id}>
-          {label}
-        </label>
-      ) : null}
+      {label ? <label className={styles.label}>{label}</label> : null}
       {isTextArea ? (
         <textarea
-          id={id}
           className={styles.textarea}
           value={value}
           onChange={onChange}
@@ -32,7 +26,6 @@ export function FormField({
         />
       ) : (
         <input
-          id={id}
           className={styles.input}
           value={value}
           onChange={onChange}

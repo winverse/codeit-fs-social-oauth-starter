@@ -8,7 +8,6 @@ function SocialLoginButton({ provider, onClick }) {
   return (
     <button
       type="button"
-      aria-label={label}
       className={styles.socialButton}
       style={buttonStyle}
       onClick={() => onClick(key)}

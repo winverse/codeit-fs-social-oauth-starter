@@ -25,10 +25,6 @@ export const socialButton = style({
       transform: 'translateY(-1px)',
       boxShadow: buttonHoverShadow,
     },
-    '&:focus-visible': {
-      outline: `2px solid ${vars.color.blue}`,
-      outlineOffset: '2px',
-    },
   },
 });
 

@@ -30,10 +30,6 @@ export const input = style({
     '&::placeholder': {
       color: vars.color.gray400,
     },
-    '&:focus-visible': {
-      outline: `2px solid ${vars.color.blue}`,
-      outlineOffset: '1px',
-    },
   },
 });
 

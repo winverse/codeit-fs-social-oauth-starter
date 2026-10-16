@@ -89,10 +89,6 @@ export const userButton = style({
     '&:hover': {
       backgroundColor: vars.color.gray50,
     },
-    '&:focus-visible': {
-      outline: `2px solid ${vars.color.blueFocus}`,
-      outlineOffset: '2px',
-    },
   },
 });
 
@@ -148,10 +144,6 @@ export const menuItemButton = style({
     '&:disabled': {
       color: vars.color.gray400,
       cursor: 'wait',
-    },
-    '&:focus-visible': {
-      outline: `2px solid ${vars.color.blueFocus}`,
-      outlineOffset: '2px',
     },
   },
 });
