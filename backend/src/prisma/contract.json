@@ -4,11 +4,11 @@
   "target": "postgres",
   "profileHash": "3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2",
   "roots": {
-    "socialAccount": {
+    "SocialAccount": {
       "model": "SocialAccount",
       "namespace": "public"
     },
-    "user": {
+    "User": {
       "model": "User",
       "namespace": "public"
     }
@@ -102,7 +102,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "socialAccount"
+              "table": "SocialAccount"
             }
           },
           "User": {
@@ -189,7 +189,7 @@
                 }
               },
               "namespaceId": "public",
-              "table": "user"
+              "table": "User"
             }
           }
         }
@@ -201,63 +201,66 @@
       "public": {
         "entries": {
           "table": {
-            "socialAccount": {
+            "SocialAccount": {
               "columns": {
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
                   "default": {
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "id": {
                   "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
                   "default": {
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "provider": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
+                  "dataType": "pg/text",
                   "nullable": false
                 },
                 "providerId": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
+                  "dataType": "pg/text",
                   "nullable": false
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
+                  "dataType": "pg/timestamptz",
                   "nullable": false
                 },
                 "userId": {
                   "codecId": "pg/int4@1",
-                  "nativeType": "int4",
+                  "dataType": "pg/int4",
                   "nullable": false
                 }
               },
               "foreignKeys": [
                 {
+                  "index": {
+                    "name": "SocialAccount_userId_idx_a489d58a"
+                  },
                   "onDelete": "cascade",
                   "source": {
                     "columns": [
                       "userId"
                     ],
                     "namespaceId": "public",
-                    "tableName": "socialAccount"
+                    "tableName": "SocialAccount"
                   },
                   "target": {
                     "columns": [
                       "id"
                     ],
                     "namespaceId": "public",
-                    "tableName": "user"
+                    "tableName": "User"
                   }
                 }
               ],
@@ -266,8 +269,8 @@
                   "columns": [
                     "userId"
                   ],
-                  "name": "socialAccount_userId_idx_a489d58a",
-                  "prefix": "socialAccount_userId_idx",
+                  "name": "SocialAccount_userId_idx_a489d58a",
+                  "prefix": "SocialAccount_userId_idx",
                   "unique": false
                 }
               ],
@@ -285,44 +288,44 @@
                 }
               ]
             },
-            "user": {
+            "User": {
               "columns": {
                 "createdAt": {
                   "codecId": "pg/timestamptz-string@1",
+                  "dataType": "pg/timestamptz",
                   "default": {
                     "expression": "now()",
                     "kind": "function"
                   },
-                  "nativeType": "timestamptz",
                   "nullable": false
                 },
                 "email": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
+                  "dataType": "pg/text",
                   "nullable": false
                 },
                 "id": {
                   "codecId": "pg/int4@1",
+                  "dataType": "pg/int4",
                   "default": {
                     "expression": "autoincrement()",
                     "kind": "function"
                   },
-                  "nativeType": "int4",
                   "nullable": false
                 },
                 "name": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
+                  "dataType": "pg/text",
                   "nullable": true
                 },
                 "password": {
                   "codecId": "pg/text@1",
-                  "nativeType": "text",
+                  "dataType": "pg/text",
                   "nullable": true
                 },
                 "updatedAt": {
                   "codecId": "pg/timestamptz-string@1",
-                  "nativeType": "timestamptz",
+                  "dataType": "pg/timestamptz",
                   "nullable": false
                 }
               },
@@ -347,10 +350,10 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "ef3e1123cf6294fc6cc3a5e08c13858b6fdac15f6c629c501a4e778a5c982032"
+    "storageHash": "58ef11d00ce005cf61847007e093992ff761fa215b1fb2e829972b81cff99a36"
   },
   "execution": {
-    "executionHash": "2d1aa85df9f55e5e811965bdbe96f2108b3008ae8ab9c4e122f57ba9682e6c99",
+    "executionHash": "348231778753c8345971b259627e9ccdcfb1b6b3d4e1b50184f580af320c0545",
     "mutations": {
       "defaults": [
         {
@@ -363,9 +366,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "socialAccount"
+            "entry": "SocialAccount",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         },
         {
@@ -378,9 +381,9 @@
             "kind": "generator"
           },
           "ref": {
-            "column": "updatedAt",
-            "namespace": "public",
-            "table": "user"
+            "entry": "User",
+            "field": "updatedAt",
+            "namespace": "public"
           }
         }
       ]
@@ -389,6 +392,8 @@
   "capabilities": {
     "postgres": {
       "distinctOn": true,
+      "forKeyShare": true,
+      "forNoKeyUpdate": true,
       "jsonAgg": true,
       "lateral": true,
       "limit": true,
@@ -399,7 +404,14 @@
       "checkConstraint": true,
       "defaultInInsert": true,
       "enums": true,
+      "forShare": true,
+      "forUpdate": true,
+      "insertOnConflictSkip": true,
+      "insertOnConflictWithoutTarget": true,
       "lateral": true,
+      "lockNowait": true,
+      "lockOf": true,
+      "lockSkipLocked": true,
       "returning": true,
       "scalarList": true
     }
