@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { BaseController } from './base-controller.js';
+import { BaseController } from './base.controller.js';
 
 export * from './auth/index.js';
 

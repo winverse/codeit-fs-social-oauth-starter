@@ -21,7 +21,7 @@ process.env.NAVER_CLIENT_ID = 'naver-client-id';
 process.env.NAVER_CLIENT_SECRET = 'naver-client-secret';
 
 const { SocialAuthService } =
-  await import('../src/services/social-auth-service.js');
+  await import('../src/services/social-auth.service.js');
 
 const jsonResponse = (payload) => ({
   ok: true,

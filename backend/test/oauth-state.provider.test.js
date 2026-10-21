@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { OAuthStateProvider } from '../src/providers/oauth-state-provider.js';
+import { OAuthStateProvider } from '../src/providers/oauth-state.provider.js';
 
 const NOW = 1_800_000_000_000;
 const createProvider = ({ now = NOW } = {}) =>

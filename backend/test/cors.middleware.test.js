@@ -20,7 +20,7 @@ process.env.KAKAO_CLIENT_SECRET = 'kakao-client-secret';
 process.env.NAVER_CLIENT_ID = 'naver-client-id';
 process.env.NAVER_CLIENT_SECRET = 'naver-client-secret';
 
-const { cors } = await import('../src/middlewares/cors-middleware.js');
+const { cors } = await import('../src/middlewares/cors.middleware.js');
 
 const invokeCors = (origin) => {
   const headers = new Map();

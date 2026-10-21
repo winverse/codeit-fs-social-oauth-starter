@@ -1,13 +1,13 @@
-import { BaseController } from '#controllers/base-controller.js';
+import { BaseController } from '#controllers/base.controller.js';
 import { ERROR_MESSAGE } from '#constants';
 import { config } from '#config';
 import { BadRequestException, UnauthorizedException } from '#exceptions';
-import { validate } from '../../middlewares/validation-middleware.js';
+import { validate } from '../../middlewares/validation.middleware.js';
 import {
   socialProviderParamSchema,
   socialLoginQuerySchema,
   socialCallbackQuerySchema,
-} from './dto/social-dto.js';
+} from './dto/social.dto.js';
 
 export class SocialAuthController extends BaseController {
   #socialAuthService;

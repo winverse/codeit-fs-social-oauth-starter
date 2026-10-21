@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { AuthService } from '../src/services/auth-service.js';
+import { AuthService } from '../src/services/auth.service.js';
 
 const tokenProvider = {
   generateTokens: () => ({ accessToken: 'access', refreshToken: 'refresh' }),

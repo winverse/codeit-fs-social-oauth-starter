@@ -24,9 +24,9 @@ process.env.NAVER_CLIENT_SECRET = 'naver-client-secret';
 
 const [{ SocialAuthController }, { CookieProvider }, { OAuthStateProvider }] =
   await Promise.all([
-    import('../src/controllers/auth/social-controller.js'),
-    import('../src/providers/cookie-provider.js'),
-    import('../src/providers/oauth-state-provider.js'),
+    import('../src/controllers/auth/social.controller.js'),
+    import('../src/providers/cookie.provider.js'),
+    import('../src/providers/oauth-state.provider.js'),
   ]);
 
 let server;

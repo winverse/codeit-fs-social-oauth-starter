@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { createDocument } from 'zod-openapi';
-import { signUpSchema, loginSchema } from '#controllers/auth/dto/auth-dto.js';
+import { signUpSchema, loginSchema } from '#controllers/auth/dto/auth.dto.js';
 
 const userResponseSchema = z
   .object({
