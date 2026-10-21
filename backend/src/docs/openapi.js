@@ -176,15 +176,15 @@ export const openApiDocument = createDocument({
         security: [{ accessTokenCookie: [] }],
         responses: {
           200: {
-            description: '사용자 조회 성공',
+            description: '사용자 조회 성공, 로그인하지 않았으면 null',
             content: {
               'application/json': {
-                schema: userResponseSchema,
+                schema: userResponseSchema.nullable(),
               },
             },
           },
-          401: {
-            description: '로그인 필요',
+          404: {
+            description: '토큰의 사용자가 없음',
             content: {
               'application/json': {
                 schema: errorResponseSchema,
