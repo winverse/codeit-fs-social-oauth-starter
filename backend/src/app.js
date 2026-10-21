@@ -30,7 +30,10 @@ export class App {
   }
 
   listen(port) {
-    return this.app.listen(port, () => {
+    return this.app.listen(port, (error) => {
+      if (error) {
+        throw error;
+      }
       console.log(`Server is running port number is ${port}`);
     });
   }
