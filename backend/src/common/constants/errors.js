@@ -21,8 +21,6 @@ export const ERROR_MESSAGE = {
   USER_NOT_FOUND_FROM_TOKEN: '토큰에 해당하는 유저를 찾을 수 없습니다.',
   AUTH_FAILED: '인증에 실패했습니다.',
   INVALID_CREDENTIALS: '이메일 또는 비밀번호가 올바르지 않습니다.',
-  UNSUPPORTED_SOCIAL_PROVIDER: '지원하지 않는 공급자입니다.',
-  SOCIAL_AUTH_CODE_REQUIRED: '인가 코드가 필요합니다.',
   INVALID_SOCIAL_AUTH_STATE: '유효하지 않거나 만료된 소셜 로그인 state입니다.',
   SOCIAL_ACCOUNT_LINK_REQUIRED:
     '이 소셜 계정을 연결하려면 먼저 기존 계정으로 로그인해야 합니다.',

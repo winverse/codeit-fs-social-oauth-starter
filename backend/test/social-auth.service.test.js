@@ -29,16 +29,7 @@ const jsonResponse = (payload) => ({
   text: async () => JSON.stringify(payload),
 });
 
-test('does not automatically connect a social login to an existing email account', async () => {
-  const responses = [
-    jsonResponse({ access_token: 'google-access-token' }),
-    jsonResponse({
-      sub: 'google-user-id',
-      email: 'Student@Example.com',
-      email_verified: true,
-      name: 'Student',
-    }),
-  ];
+const withFakeFetch = async (responses, run) => {
   const requests = [];
   const originalFetch = globalThis.fetch;
   globalThis.fetch = async (url, options = {}) => {
@@ -46,6 +37,222 @@ test('does not automatically connect a social login to an existing email account
     return responses.shift();
   };
 
+  try {
+    await run();
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+  return requests;
+};
+
+const createService = (userRepository = {}) =>
+  new SocialAuthService({
+    userRepository,
+    tokenProvider: {
+      generateTokens: () => ({
+        accessToken: 'access',
+        refreshToken: 'refresh',
+      }),
+    },
+  });
+
+const naverProfileResponses = (id, email) => [
+  jsonResponse({ access_token: 'naver-access-token' }),
+  jsonResponse({ response: { id, email, name: 'Student' } }),
+];
+
+test('getSocialProfile sends the Google PKCE verifier in the token request', async () => {
+  const requests = await withFakeFetch(
+    [
+      jsonResponse({ access_token: 'google-access-token' }),
+      jsonResponse({
+        sub: 'google-user-id',
+        email: 'Student@Example.com',
+        email_verified: true,
+        name: 'Student',
+      }),
+    ],
+    async () => {
+      const profile = await createService().getSocialProfile('google', {
+        code: 'code',
+        state: 'state',
+        codeVerifier: 'google-code-verifier',
+      });
+      assert.deepEqual(profile, {
+        id: 'google-user-id',
+        email: 'Student@Example.com',
+        emailVerified: true,
+        name: 'Student',
+      });
+    },
+  );
+
+  assert.equal(
+    requests[0].options.body.get('code_verifier'),
+    'google-code-verifier',
+  );
+});
+
+test('getSocialProfile sends the same redirect_uri as getCallbackUri in every token request', async () => {
+  const profilePayloads = {
+    google: { sub: 'google-user-id' },
+    kakao: { id: 123 },
+    naver: { response: { id: 'naver-user-id' } },
+  };
+
+  for (const [provider, profilePayload] of Object.entries(profilePayloads)) {
+    const requests = await withFakeFetch(
+      [
+        jsonResponse({ access_token: `${provider}-access-token` }),
+        jsonResponse(profilePayload),
+      ],
+      () =>
+        createService().getSocialProfile(provider, {
+          code: 'code',
+          state: 'state',
+          codeVerifier: `${provider}-code-verifier`,
+        }),
+    );
+
+    assert.equal(
+      requests[0].options.body.get('redirect_uri'),
+      SocialAuthService.getCallbackUri(provider),
+    );
+  }
+});
+
+test('getSocialProfile sends the Kakao PKCE verifier and requests the profile with GET', async () => {
+  const requests = await withFakeFetch(
+    [
+      jsonResponse({ access_token: 'kakao-access-token' }),
+      jsonResponse({
+        id: 123,
+        kakao_account: {
+          email: 'kakao@example.com',
+          is_email_valid: true,
+          is_email_verified: true,
+          profile: { nickname: 'Student' },
+        },
+      }),
+    ],
+    () =>
+      createService().getSocialProfile('kakao', {
+        code: 'code',
+        state: 'state',
+        codeVerifier: 'kakao-code-verifier',
+      }),
+  );
+
+  assert.equal(
+    requests[0].options.body.get('code_verifier'),
+    'kakao-code-verifier',
+  );
+  assert.equal(requests[1].url, 'https://kapi.kakao.com/v2/user/me');
+  assert.equal(requests[1].options.method ?? 'GET', 'GET');
+  assert.equal(requests[1].options.body, undefined);
+  assert.equal(
+    requests[1].options.headers.Authorization,
+    'Bearer kakao-access-token',
+  );
+});
+
+test('getSocialProfile sends the Naver token request and marks its email unverified', async () => {
+  let profile;
+  const requests = await withFakeFetch(
+    naverProfileResponses('naver-user-id', 'contact@example.com'),
+    async () => {
+      profile = await createService().getSocialProfile('naver', {
+        code: 'code',
+        state: 'state',
+        codeVerifier: 'naver-code-verifier',
+      });
+    },
+  );
+
+  assert.equal(requests[0].url, 'https://nid.naver.com/oauth2/token');
+  assert.equal(requests[0].options.method, 'POST');
+  assert.equal(
+    requests[0].options.body.get('code_verifier'),
+    'naver-code-verifier',
+  );
+  assert.equal(
+    requests[0].options.body.get('client_secret'),
+    'naver-client-secret',
+  );
+  assert.equal(new URL(requests[0].url).search, '');
+  assert.equal(profile.emailVerified, false);
+});
+
+test('getSocialProfile rejects a provider token response without an access token', async () => {
+  await withFakeFetch(
+    [
+      jsonResponse({}),
+      jsonResponse({
+        sub: 'google-user-id',
+        email: 'student@example.com',
+        email_verified: true,
+      }),
+    ],
+    () =>
+      assert.rejects(
+        createService().getSocialProfile('google', {
+          code: 'code',
+          state: 'state',
+          codeVerifier: 'google-code-verifier',
+        }),
+        { message: '소셜 로그인에 실패했습니다.' },
+      ),
+  );
+});
+
+test('getSocialProfile rejects a provider profile without its required user ID', async () => {
+  await withFakeFetch(
+    [
+      jsonResponse({ access_token: 'google-access-token' }),
+      jsonResponse({
+        email: 'student@example.com',
+        email_verified: true,
+      }),
+    ],
+    () =>
+      assert.rejects(
+        createService().getSocialProfile('google', {
+          code: 'code',
+          state: 'state',
+          codeVerifier: 'google-code-verifier',
+        }),
+        { message: '소셜 로그인에 실패했습니다.' },
+      ),
+  );
+});
+
+test('getSocialProfile rejects missing identity fields from every provider profile', async () => {
+  const cases = [
+    ['google', {}],
+    ['kakao', {}],
+    ['naver', { response: {} }],
+  ];
+
+  for (const [provider, profilePayload] of cases) {
+    await withFakeFetch(
+      [
+        jsonResponse({ access_token: `${provider}-access-token` }),
+        jsonResponse(profilePayload),
+      ],
+      () =>
+        assert.rejects(
+          createService().getSocialProfile(provider, {
+            code: 'code',
+            state: 'state',
+            codeVerifier: `${provider}-code-verifier`,
+          }),
+          { message: '소셜 로그인에 실패했습니다.' },
+        ),
+    );
+  }
+});
+
+test('loginOrSignUp does not automatically connect a social login to an existing email account', async () => {
   const service = new SocialAuthService({
     userRepository: {
       findBySocialAccount: async () => null,
@@ -59,86 +266,46 @@ test('does not automatically connect a social login to an existing email account
     },
   });
 
-  try {
-    await assert.rejects(
-      service.loginOrSignUp({
-        provider: 'google',
-        code: 'code',
-        state: 'state',
-        codeVerifier: 'google-code-verifier',
-      }),
-      {
-        message:
-          '이 소셜 계정을 연결하려면 먼저 기존 계정으로 로그인해야 합니다.',
-      },
-    );
-    assert.equal(
-      requests[0].options.body.get('code_verifier'),
-      'google-code-verifier',
-    );
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
-
-test('does not use a mutable Naver contact email as an account-link identity', async () => {
-  const responses = [
-    jsonResponse({ access_token: 'naver-access-token' }),
-    jsonResponse({
-      response: {
-        id: 'naver-user-id',
-        email: 'contact@example.com',
+  await assert.rejects(
+    service.loginOrSignUp({
+      provider: 'google',
+      profile: {
+        id: 'google-user-id',
+        email: 'Student@Example.com',
+        emailVerified: true,
         name: 'Student',
       },
     }),
-  ];
-  const requests = [];
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (url, options = {}) => {
-    requests.push({ url, options });
-    return responses.shift();
-  };
-  let createdUser = null;
-
-  const service = new SocialAuthService({
-    userRepository: {
-      findBySocialAccount: async () => null,
-      findByEmail: () =>
-        assert.fail('unverified contact email must not be queried'),
-      createWithSocialAccount: async (input) => {
-        createdUser = input;
-        return { id: 2, email: input.email, name: input.name };
-      },
+    {
+      message:
+        '이 소셜 계정을 연결하려면 먼저 기존 계정으로 로그인해야 합니다.',
     },
-    tokenProvider: {
-      generateTokens: () => ({
-        accessToken: 'access',
-        refreshToken: 'refresh',
-      }),
+  );
+});
+
+test('loginOrSignUp does not use a mutable Naver contact email as an account-link identity', async () => {
+  let createdUser = null;
+  const service = createService({
+    findBySocialAccount: async () => null,
+    findByEmail: () =>
+      assert.fail('unverified contact email must not be queried'),
+    createWithSocialAccount: async (input) => {
+      createdUser = input;
+      return { id: 2, email: input.email, name: input.name };
     },
   });
 
-  try {
-    await service.loginOrSignUp({
-      provider: 'naver',
-      code: 'code',
-      state: 'state',
-      codeVerifier: 'naver-code-verifier',
-    });
-    assert.equal(requests[0].url, 'https://nid.naver.com/oauth2/token');
-    assert.equal(requests[0].options.method, 'POST');
-    assert.equal(
-      requests[0].options.body.get('code_verifier'),
-      'naver-code-verifier',
-    );
-    assert.equal(
-      requests[0].options.body.get('client_secret'),
-      'naver-client-secret',
-    );
-    assert.equal(new URL(requests[0].url).search, '');
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
+  await withFakeFetch(
+    naverProfileResponses('naver-user-id', 'contact@example.com'),
+    async () => {
+      const profile = await service.getSocialProfile('naver', {
+        code: 'code',
+        state: 'state',
+        codeVerifier: 'naver-code-verifier',
+      });
+      await service.loginOrSignUp({ provider: 'naver', profile });
+    },
+  );
 
   const expectedDigest = createHash('sha256')
     .update('naver:naver-user-id')
@@ -146,211 +313,31 @@ test('does not use a mutable Naver contact email as an account-link identity', a
   assert.equal(createdUser.email, `naver_${expectedDigest}@social.local`);
 });
 
-test('keeps different BASE64-shaped Naver IDs distinct in virtual emails', async () => {
-  const responses = [
-    jsonResponse({ access_token: 'first-token' }),
-    jsonResponse({ response: { id: 'a+b', name: 'First' } }),
-    jsonResponse({ access_token: 'second-token' }),
-    jsonResponse({ response: { id: 'a/b', name: 'Second' } }),
-  ];
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => responses.shift();
+test('loginOrSignUp keeps different BASE64-shaped Naver IDs distinct in virtual emails', async () => {
   const createdEmails = [];
-
-  const service = new SocialAuthService({
-    userRepository: {
-      findBySocialAccount: async () => null,
-      findByEmail: () => assert.fail('Naver contact email must not be queried'),
-      createWithSocialAccount: async (input) => {
-        createdEmails.push(input.email);
-        return { id: createdEmails.length, ...input };
-      },
-    },
-    tokenProvider: {
-      generateTokens: () => ({
-        accessToken: 'access',
-        refreshToken: 'refresh',
-      }),
+  const service = createService({
+    findBySocialAccount: async () => null,
+    findByEmail: () => assert.fail('Naver contact email must not be queried'),
+    createWithSocialAccount: async (input) => {
+      createdEmails.push(input.email);
+      return { id: createdEmails.length, ...input };
     },
   });
 
-  try {
-    for (const code of ['first-code', 'second-code']) {
-      await service.loginOrSignUp({
-        provider: 'naver',
-        code,
+  for (const id of ['a+b', 'a/b']) {
+    await withFakeFetch(naverProfileResponses(id), async () => {
+      const profile = await service.getSocialProfile('naver', {
+        code: 'code',
         state: 'state',
         codeVerifier: 'naver-code-verifier',
       });
-    }
-  } finally {
-    globalThis.fetch = originalFetch;
+      await service.loginOrSignUp({ provider: 'naver', profile });
+    });
   }
 
   assert.equal(createdEmails.length, 2);
   assert.notEqual(createdEmails[0], createdEmails[1]);
   for (const email of createdEmails) {
     assert.ok(email.indexOf('@') <= 64);
-  }
-});
-
-test('sends the Kakao PKCE verifier in the token request body', async () => {
-  const responses = [
-    jsonResponse({ access_token: 'kakao-access-token' }),
-    jsonResponse({
-      id: 123,
-      kakao_account: {
-        email: 'kakao@example.com',
-        is_email_valid: true,
-        is_email_verified: true,
-        profile: { nickname: 'Student' },
-      },
-    }),
-  ];
-  const requests = [];
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async (url, options = {}) => {
-    requests.push({ url, options });
-    return responses.shift();
-  };
-
-  const service = new SocialAuthService({
-    userRepository: {
-      findBySocialAccount: async () => null,
-      findByEmail: async () => null,
-      createWithSocialAccount: async (input) => ({ id: 3, ...input }),
-    },
-    tokenProvider: {
-      generateTokens: () => ({
-        accessToken: 'access',
-        refreshToken: 'refresh',
-      }),
-    },
-  });
-
-  try {
-    await service.loginOrSignUp({
-      provider: 'kakao',
-      code: 'code',
-      state: 'state',
-      codeVerifier: 'kakao-code-verifier',
-    });
-    assert.equal(
-      requests[0].options.body.get('code_verifier'),
-      'kakao-code-verifier',
-    );
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
-
-test('rejects a provider token response without an access token', async () => {
-  const responses = [
-    jsonResponse({}),
-    jsonResponse({
-      sub: 'google-user-id',
-      email: 'student@example.com',
-      email_verified: true,
-    }),
-  ];
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => responses.shift();
-  const service = new SocialAuthService({
-    userRepository: {
-      findBySocialAccount: () =>
-        assert.fail('an invalid token response must stop before user lookup'),
-    },
-    tokenProvider: {
-      generateTokens: () => assert.fail('tokens must not be generated'),
-    },
-  });
-
-  try {
-    await assert.rejects(
-      service.loginOrSignUp({
-        provider: 'google',
-        code: 'code',
-        state: 'state',
-        codeVerifier: 'google-code-verifier',
-      }),
-      { message: '소셜 로그인에 실패했습니다.' },
-    );
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
-
-test('rejects a provider profile without its required user ID', async () => {
-  const responses = [
-    jsonResponse({ access_token: 'google-access-token' }),
-    jsonResponse({
-      email: 'student@example.com',
-      email_verified: true,
-    }),
-  ];
-  const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => responses.shift();
-  const service = new SocialAuthService({
-    userRepository: {
-      findBySocialAccount: () =>
-        assert.fail('an invalid profile must stop before user lookup'),
-    },
-    tokenProvider: {
-      generateTokens: () => assert.fail('tokens must not be generated'),
-    },
-  });
-
-  try {
-    await assert.rejects(
-      service.loginOrSignUp({
-        provider: 'google',
-        code: 'code',
-        state: 'state',
-        codeVerifier: 'google-code-verifier',
-      }),
-      { message: '소셜 로그인에 실패했습니다.' },
-    );
-  } finally {
-    globalThis.fetch = originalFetch;
-  }
-});
-
-test('rejects missing identity fields from every provider profile', async () => {
-  const cases = [
-    ['google', {}],
-    ['kakao', {}],
-    ['naver', { response: {} }],
-  ];
-
-  for (const [provider, profilePayload] of cases) {
-    const responses = [
-      jsonResponse({ access_token: `${provider}-access-token` }),
-      jsonResponse(profilePayload),
-    ];
-    const originalFetch = globalThis.fetch;
-    globalThis.fetch = async () => responses.shift();
-    const service = new SocialAuthService({
-      userRepository: {
-        findBySocialAccount: () =>
-          assert.fail('an invalid profile must stop before user lookup'),
-      },
-      tokenProvider: {
-        generateTokens: () => assert.fail('tokens must not be generated'),
-      },
-    });
-
-    try {
-      await assert.rejects(
-        service.loginOrSignUp({
-          provider,
-          code: 'code',
-          state: 'state',
-          codeVerifier: `${provider}-code-verifier`,
-        }),
-        { message: '소셜 로그인에 실패했습니다.' },
-      );
-    } finally {
-      globalThis.fetch = originalFetch;
-    }
   }
 });

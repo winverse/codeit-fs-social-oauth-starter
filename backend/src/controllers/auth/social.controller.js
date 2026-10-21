@@ -2,6 +2,7 @@ import { BaseController } from '#controllers/base.controller.js';
 import { ERROR_MESSAGE } from '#constants';
 import { config } from '#config';
 import { BadRequestException, UnauthorizedException } from '#exceptions';
+import { SocialAuthService } from '#services';
 import { validate } from '../../middlewares/validation.middleware.js';
 import {
   socialProviderParamSchema,
@@ -56,7 +57,7 @@ export class SocialAuthController extends BaseController {
       codeVerifier,
     });
 
-    const loginUrl = this.generateSocialLoginLink(provider, {
+    const loginUrl = this.#loginUrlGenerators[provider]({
       state,
       codeChallenge,
     });
@@ -89,15 +90,14 @@ export class SocialAuthController extends BaseController {
       );
     }
 
-    if (!code) {
-      throw new BadRequestException(ERROR_MESSAGE.SOCIAL_AUTH_CODE_REQUIRED);
-    }
-
-    const { tokens } = await this.#socialAuthService.loginOrSignUp({
-      provider,
+    const profile = await this.#socialAuthService.getSocialProfile(provider, {
       code,
       state,
       codeVerifier,
+    });
+    const { tokens } = await this.#socialAuthService.loginOrSignUp({
+      provider,
+      profile,
     });
 
     this.#cookieProvider.setAuthCookies(res, tokens);
@@ -110,62 +110,44 @@ export class SocialAuthController extends BaseController {
     return res.redirect(redirectUrl);
   }
 
-  generateSocialLoginLink(provider, { state, codeChallenge }) {
-    const generator = this.socialLoginLinkGenerator[provider];
-    if (!generator) {
-      throw new BadRequestException(ERROR_MESSAGE.UNSUPPORTED_SOCIAL_PROVIDER);
-    }
+  #loginUrlGenerators = {
+    google: ({ state, codeChallenge }) => {
+      const params = new URLSearchParams({
+        client_id: config.GOOGLE_CLIENT_ID,
+        redirect_uri: SocialAuthService.getCallbackUri('google'),
+        response_type: 'code',
+        scope: 'openid email profile',
+        state,
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
+      });
 
-    return generator({ state, codeChallenge });
-  }
+      return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    },
+    kakao: ({ state, codeChallenge }) => {
+      const params = new URLSearchParams({
+        client_id: config.KAKAO_CLIENT_ID,
+        redirect_uri: SocialAuthService.getCallbackUri('kakao'),
+        response_type: 'code',
+        state,
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
+      });
 
-  get socialLoginLinkGenerator() {
-    return {
-      google: ({ state, codeChallenge }) => {
-        const callback = `${this.#redirectUri}/google`;
-        const params = new URLSearchParams({
-          client_id: config.GOOGLE_CLIENT_ID,
-          redirect_uri: callback,
-          response_type: 'code',
-          scope: 'openid email profile',
-          state,
-          code_challenge: codeChallenge,
-          code_challenge_method: 'S256',
-        });
+      return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
+    },
+    naver: ({ state, codeChallenge }) => {
+      const params = new URLSearchParams({
+        response_type: 'code',
+        client_id: config.NAVER_CLIENT_ID,
+        redirect_uri: SocialAuthService.getCallbackUri('naver'),
+        state,
+        scope: 'openid',
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
+      });
 
-        return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-      },
-      kakao: ({ state, codeChallenge }) => {
-        const callback = `${this.#redirectUri}/kakao`;
-        const params = new URLSearchParams({
-          client_id: config.KAKAO_CLIENT_ID,
-          redirect_uri: callback,
-          response_type: 'code',
-          state,
-          code_challenge: codeChallenge,
-          code_challenge_method: 'S256',
-        });
-
-        return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
-      },
-      naver: ({ state, codeChallenge }) => {
-        const callback = `${this.#redirectUri}/naver`;
-        const params = new URLSearchParams({
-          response_type: 'code',
-          client_id: config.NAVER_CLIENT_ID,
-          redirect_uri: callback,
-          state,
-          scope: 'openid',
-          code_challenge: codeChallenge,
-          code_challenge_method: 'S256',
-        });
-
-        return `https://nid.naver.com/oauth2/authorize?${params.toString()}`;
-      },
-    };
-  }
-
-  get #redirectUri() {
-    return `${config.API_BASE_URL}/api/auth/social/callback`;
-  }
+      return `https://nid.naver.com/oauth2/authorize?${params.toString()}`;
+    },
+  };
 }

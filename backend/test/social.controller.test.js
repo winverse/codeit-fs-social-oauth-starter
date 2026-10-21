@@ -22,22 +22,28 @@ process.env.KAKAO_CLIENT_SECRET = 'kakao-client-secret';
 process.env.NAVER_CLIENT_ID = 'naver-client-id';
 process.env.NAVER_CLIENT_SECRET = 'naver-client-secret';
 
-const [{ SocialAuthController }, { CookieProvider }, { OAuthStateProvider }] =
-  await Promise.all([
-    import('../src/controllers/auth/social.controller.js'),
-    import('../src/providers/cookie.provider.js'),
-    import('../src/providers/oauth-state.provider.js'),
-  ]);
+const [
+  { SocialAuthController },
+  { CookieProvider },
+  { OAuthStateProvider },
+  { SocialAuthService },
+] = await Promise.all([
+  import('../src/controllers/auth/social.controller.js'),
+  import('../src/providers/cookie.provider.js'),
+  import('../src/providers/oauth-state.provider.js'),
+  import('../src/services/social-auth.service.js'),
+]);
 
 let server;
 let baseUrl;
+const serviceCalls = [];
 
 const toCookieHeader = (setCookies) =>
   setCookies.map((value) => value.split(';', 1)[0]).join('; ');
 
-const beginLogin = async (provider = 'google') => {
+const beginLogin = async (provider = 'google', query = '?next=/dashboard') => {
   const response = await fetch(
-    `${baseUrl}/api/auth/social/${provider}/login?next=/dashboard`,
+    `${baseUrl}/api/auth/social/${provider}/login${query}`,
     { redirect: 'manual' },
   );
   const location = new URL(response.headers.get('location'));
@@ -53,9 +59,14 @@ before(() => {
   const cookieProvider = new CookieProvider();
   const controller = new SocialAuthController({
     socialAuthService: {
-      loginOrSignUp: async () => ({
-        tokens: { accessToken: 'access', refreshToken: 'refresh' },
-      }),
+      getSocialProfile: async (provider, input) => {
+        serviceCalls.push(['getSocialProfile', provider, input]);
+        return { id: 'social-user-id' };
+      },
+      loginOrSignUp: async (input) => {
+        serviceCalls.push(['loginOrSignUp', input]);
+        return { tokens: { accessToken: 'access', refreshToken: 'refresh' } };
+      },
     },
     cookieProvider,
     oauthStateProvider: new OAuthStateProvider({
@@ -82,6 +93,10 @@ test('builds all provider redirects with state and PKCE S256', async () => {
     assert.ok(state);
     assert.equal(location.searchParams.get('code_challenge_method'), 'S256');
     assert.equal(location.searchParams.get('code_challenge')?.length, 43);
+    assert.equal(
+      location.searchParams.get('redirect_uri'),
+      SocialAuthService.getCallbackUri(provider),
+    );
 
     const setCookies = response.headers.getSetCookie();
     assert.equal(setCookies.length, 2);
@@ -96,6 +111,7 @@ test('builds all provider redirects with state and PKCE S256', async () => {
 });
 
 test('accepts one browser callback and rejects reuse after transaction cookies are cleared', async () => {
+  serviceCalls.length = 0;
   const { state, cookieHeader } = await beginLogin();
   const callbackUrl = `${baseUrl}/api/auth/social/callback/google?code=code&state=${encodeURIComponent(state)}`;
   const success = await fetch(callbackUrl, {
@@ -115,6 +131,16 @@ test('accepts one browser callback and rejects reuse after transaction cookies a
   assert.ok(successCookies.some((value) => /^oauthCodeVerifier=;/.test(value)));
   assert.ok(successCookies.some((value) => /^accessToken=/.test(value)));
   assert.ok(successCookies.some((value) => /^refreshToken=/.test(value)));
+  assert.equal(serviceCalls.length, 2);
+  assert.equal(serviceCalls[0][0], 'getSocialProfile');
+  assert.equal(serviceCalls[0][1], 'google');
+  assert.equal(serviceCalls[0][2].code, 'code');
+  assert.equal(serviceCalls[0][2].state, state);
+  assert.ok(serviceCalls[0][2].codeVerifier);
+  assert.deepEqual(serviceCalls[1], [
+    'loginOrSignUp',
+    { provider: 'google', profile: { id: 'social-user-id' } },
+  ]);
 
   const reusedWithoutCookies = await fetch(callbackUrl, { redirect: 'manual' });
   assert.equal(reusedWithoutCookies.status, 400);
@@ -144,4 +170,20 @@ test('clears transaction cookies on cancellation, invalid state, and missing inp
     );
     assert.ok(setCookies.some((value) => /^oauthCodeVerifier=;/.test(value)));
   }
+});
+
+test('returns to / when login starts without next', async () => {
+  const { state, cookieHeader } = await beginLogin('google', '');
+  const [encodedPayload] = state.split('.');
+  const payload = JSON.parse(
+    Buffer.from(encodedPayload, 'base64url').toString('utf8'),
+  );
+  assert.equal(payload.next, '/');
+
+  const response = await fetch(
+    `${baseUrl}/api/auth/social/callback/google?code=code&state=${encodeURIComponent(state)}`,
+    { headers: { Cookie: cookieHeader }, redirect: 'manual' },
+  );
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get('location'), 'http://localhost:3000/');
 });

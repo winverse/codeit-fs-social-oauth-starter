@@ -2,11 +2,7 @@ import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { config } from '#config';
 import { ERROR_MESSAGE } from '#constants';
-import {
-  BadRequestException,
-  ConflictException,
-  UnauthorizedException,
-} from '#exceptions';
+import { ConflictException, UnauthorizedException } from '#exceptions';
 import { canonicalizeEmail } from '../common/utils/email.js';
 
 const accessTokenResponseSchema = z.object({
@@ -45,19 +41,27 @@ const naverProfileSchema = z.object({
 export class SocialAuthService {
   #userRepository;
   #tokenProvider;
+  #profileFetchers = {
+    google: (input) => this.#getGoogleProfile(input),
+    kakao: (input) => this.#getKakaoProfile(input),
+    naver: (input) => this.#getNaverProfile(input),
+  };
 
   constructor({ userRepository, tokenProvider }) {
     this.#userRepository = userRepository;
     this.#tokenProvider = tokenProvider;
   }
 
-  async loginOrSignUp({ provider, code, state, codeVerifier }) {
-    const profile = await this.#getSocialProfile(
-      provider,
-      code,
-      state,
-      codeVerifier,
-    );
+  // 인가 요청과 토큰 요청은 이 함수가 만든 같은 redirect_uri를 보냅니다.
+  static getCallbackUri(provider) {
+    return `${config.API_BASE_URL}/api/auth/social/callback/${provider}`;
+  }
+
+  async getSocialProfile(provider, { code, state, codeVerifier }) {
+    return this.#profileFetchers[provider]({ code, state, codeVerifier });
+  }
+
+  async loginOrSignUp({ provider, profile }) {
     const user = await this.#resolveUser({ provider, profile });
     const tokens = this.#tokenProvider.generateTokens(user);
     return { user, tokens };
@@ -95,24 +99,7 @@ export class SocialAuthService {
     throw new ConflictException(ERROR_MESSAGE.SOCIAL_ACCOUNT_LINK_REQUIRED);
   }
 
-  async #getSocialProfile(provider, code, state, codeVerifier) {
-    switch (provider) {
-      case 'google':
-        return this.#getGoogleProfile(code, codeVerifier);
-      case 'kakao':
-        return this.#getKakaoProfile(code, codeVerifier);
-      case 'naver':
-        return this.#getNaverProfile(code, state, codeVerifier);
-      default:
-        throw new BadRequestException(
-          ERROR_MESSAGE.UNSUPPORTED_SOCIAL_PROVIDER,
-        );
-    }
-  }
-
-  async #getGoogleProfile(code, codeVerifier) {
-    const callbackUri = `${config.API_BASE_URL}/api/auth/social/callback/google`;
-
+  async #getGoogleProfile({ code, codeVerifier }) {
     const tokenResponse = this.#parseSocialResponse(
       accessTokenResponseSchema,
       await this.#requestSocialJson(
@@ -126,7 +113,7 @@ export class SocialAuthService {
             code,
             client_id: config.GOOGLE_CLIENT_ID,
             client_secret: config.GOOGLE_CLIENT_SECRET,
-            redirect_uri: callbackUri,
+            redirect_uri: SocialAuthService.getCallbackUri('google'),
             grant_type: 'authorization_code',
             code_verifier: codeVerifier,
           }),
@@ -156,14 +143,12 @@ export class SocialAuthService {
     };
   }
 
-  async #getKakaoProfile(code, codeVerifier) {
-    const callbackUri = `${config.API_BASE_URL}/api/auth/social/callback/kakao`;
-
+  async #getKakaoProfile({ code, codeVerifier }) {
     const tokenParams = new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: config.KAKAO_CLIENT_ID,
       client_secret: config.KAKAO_CLIENT_SECRET,
-      redirect_uri: callbackUri,
+      redirect_uri: SocialAuthService.getCallbackUri('kakao'),
       code,
       code_verifier: codeVerifier,
     });
@@ -188,12 +173,10 @@ export class SocialAuthService {
       await this.#requestSocialJson(
         'https://kapi.kakao.com/v2/user/me',
         {
-          method: 'POST',
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
             Authorization: `Bearer ${tokenResponse.access_token}`,
+            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
           },
-          body: new URLSearchParams(),
         },
         'Kakao 프로필 조회에 실패했습니다.',
       ),
@@ -214,16 +197,14 @@ export class SocialAuthService {
     };
   }
 
-  async #getNaverProfile(code, state, codeVerifier) {
-    const callbackUri = `${config.API_BASE_URL}/api/auth/social/callback/naver`;
-
+  async #getNaverProfile({ code, state, codeVerifier }) {
     const tokenParams = new URLSearchParams({
       grant_type: 'authorization_code',
       client_id: config.NAVER_CLIENT_ID,
       client_secret: config.NAVER_CLIENT_SECRET,
       code,
       state,
-      redirect_uri: callbackUri,
+      redirect_uri: SocialAuthService.getCallbackUri('naver'),
       code_verifier: codeVerifier,
     });
 
@@ -260,6 +241,7 @@ export class SocialAuthService {
     return {
       id: String(profileResponse.id),
       email: profileResponse.email ?? null,
+      // Naver의 email은 사용자가 바꾼 외부 메일일 수 있고 인증 여부를 알려 주지 않습니다.
       emailVerified: false,
       name:
         profileResponse.name ??
@@ -274,6 +256,7 @@ export class SocialAuthService {
       return canonicalizeEmail(profile.email);
     }
 
+    // 계약의 email은 비울 수 없고 겹칠 수 없으므로 공급자와 ID로 대신 만듭니다.
     const socialIdentityDigest = createHash('sha256')
       .update(`${provider}:${String(profile.id)}`)
       .digest('base64url');
