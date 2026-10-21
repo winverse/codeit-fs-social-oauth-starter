@@ -6,6 +6,6 @@ export class BaseController {
   }
 
   routes() {
-    throw new Error('Method not implemented.');
+    throw new Error('메서드가 구현되지 않았습니다.');
   }
 }

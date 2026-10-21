@@ -69,7 +69,7 @@ test('does not automatically connect a social login to an existing email account
       }),
       {
         message:
-          'Sign in with your existing account before connecting this social account',
+          '이 소셜 계정을 연결하려면 먼저 기존 계정으로 로그인해야 합니다.',
       },
     );
     assert.equal(
@@ -273,7 +273,7 @@ test('rejects a provider token response without an access token', async () => {
         state: 'state',
         codeVerifier: 'google-code-verifier',
       }),
-      { message: 'Social authentication failed' },
+      { message: '소셜 로그인에 실패했습니다.' },
     );
   } finally {
     globalThis.fetch = originalFetch;
@@ -308,7 +308,7 @@ test('rejects a provider profile without its required user ID', async () => {
         state: 'state',
         codeVerifier: 'google-code-verifier',
       }),
-      { message: 'Social authentication failed' },
+      { message: '소셜 로그인에 실패했습니다.' },
     );
   } finally {
     globalThis.fetch = originalFetch;
@@ -347,7 +347,7 @@ test('rejects missing identity fields from every provider profile', async () => 
           state: 'state',
           codeVerifier: `${provider}-code-verifier`,
         }),
-        { message: 'Social authentication failed' },
+        { message: '소셜 로그인에 실패했습니다.' },
       );
     } finally {
       globalThis.fetch = originalFetch;

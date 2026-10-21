@@ -11,7 +11,7 @@ import { BadRequestException } from '#exceptions';
 export const validate = (target, schema) => {
   if (!['body', 'query', 'params'].includes(target)) {
     throw new Error(
-      `[validate middleware] Invalid target: "${target}". Expected "body", "query", or "params".`,
+      `[validate middleware] 유효하지 않은 target입니다: "${target}". "body", "query", "params" 중 하나여야 합니다.`,
     );
   }
   return (req, res, next) => {
