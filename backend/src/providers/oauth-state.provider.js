@@ -4,8 +4,9 @@ import {
   randomBytes,
   timingSafeEqual,
 } from 'node:crypto';
+import { MINUTE_IN_MS } from '#constants';
 
-const STATE_TTL_MS = 10 * 60 * 1000;
+const STATE_TTL_MS = 10 * MINUTE_IN_MS;
 
 const safeEqual = (left, right) => {
   const leftBuffer = Buffer.from(String(left));

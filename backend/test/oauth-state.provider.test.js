@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { MINUTE_IN_MS } from '#constants';
 import { OAuthStateProvider } from '../src/providers/oauth-state.provider.js';
 
 const NOW = 1_800_000_000_000;
@@ -92,7 +93,9 @@ test('rejects an expired state', () => {
       next: '/',
     },
   );
-  const verifyingProvider = createProvider({ now: NOW + 10 * 60 * 1000 + 1 });
+  const verifyingProvider = createProvider({
+    now: NOW + 10 * MINUTE_IN_MS + 1,
+  });
 
   assert.equal(
     verifyingProvider.verifyState({
