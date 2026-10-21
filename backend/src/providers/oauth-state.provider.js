@@ -33,7 +33,7 @@ export class OAuthStateProvider {
     this.#randomBytes = randomBytesFn;
   }
 
-  createState({ provider, next = '/' }) {
+  createState({ provider, next }) {
     const codeVerifier = this.#randomBytes(32).toString('base64url');
     const codeChallenge = createHash('sha256')
       .update(codeVerifier)
