@@ -21,6 +21,7 @@ export function AuthCredentialForm({
     <form className={styles.form} onSubmit={onSubmit}>
       {mode === 'signup' ? (
         <FormField
+          id="name"
           label="이름"
           value={name}
           onChange={(event) => onNameChange(event.target.value)}
@@ -31,6 +32,7 @@ export function AuthCredentialForm({
       ) : null}
 
       <FormField
+        id="email"
         label="이메일"
         type="email"
         value={email}
@@ -41,6 +43,7 @@ export function AuthCredentialForm({
       />
 
       <FormField
+        id="password"
         label="비밀번호"
         type="password"
         value={password}
