@@ -26,12 +26,12 @@ cp env/.env.example env/.env.development
 있습니다.
 
 ```bash
-pnpm run db:init
+pnpm run prisma:init
 ```
 
-계약(`src/prisma/contract.prisma`)을 바꿨다면 `pnpm run contract:emit`으로
+계약(`src/prisma/contract.prisma`)을 바꿨다면 `pnpm run prisma:emit`으로
 결과물을 다시 만들고, 이미 테이블이 있는 데이터베이스에는
-`pnpm run db:update`로 변경을 반영합니다.
+`pnpm run prisma:update`로 변경을 반영합니다.
 
 초기 데이터가 필요할 때만 seed를 실행합니다.
 
